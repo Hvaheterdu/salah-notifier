@@ -11,16 +11,17 @@
 // Configuration Constants.
 namespace Config
 {
+    // Request settings.
     constexpr int HTTPS_PORT = 443;
     constexpr char HTTP_METHOD[] = "GET";
     constexpr char HOST_NAME[] = "";
     constexpr char PATH_NAME[] = "";
     constexpr char API_TOKEN[] = "";
     constexpr char CONTENT_TYPE[] = "application/json";
+
+    // WiFi connection settings.
     constexpr char SECRET_SSID[] = "";
     constexpr char SECRET_PASSWORD[] = "";
-    constexpr int WIFI_STATUS = WL_IDLE_STATUS;
-
     constexpr int WIFI_CONNECTION_ATTEMPTS = 5;
 
     // Speaker pins and settings.
@@ -33,10 +34,10 @@ namespace Config
     constexpr int JSON_DOCUMENT_SIZE = 1500;
     constexpr int HTTP_STATUS_SIZE = 100;
 
-    // Timezone and DST
+    // Timezone and DST.
     constexpr int TIMEZONE_OFFSET_HOURS = 1 * 3600;
     constexpr int DST_OFFSET = 3600;
-}
+};
 
 // Prayer Times Structure.
 struct PrayerTimes
@@ -155,7 +156,7 @@ void connectToWifi()
         displayMessage("Upgrade WiFi", "firmware");
     }
 
-    while (WiFi.status() != WL_CONNECTED)
+    if (WiFi.status() != WL_CONNECTED)
     {
         WiFi.begin(Config::SECRET_SSID, Config::SECRET_PASSWORD);
         displayMessage("Connect to SSID:", Config::SECRET_SSID);
@@ -289,185 +290,184 @@ String formatTimeWithLeadingZero(int value)
 bool isDaylightSavingTime(int day, int month, int weekday, int hour)
 {
     if (month < 3 || month > 10)
+    {
         return false;
+    }
+
     if (month > 3 && month < 10)
+    {
         return true;
+    }
 
     int weekdayOf31 = (weekday + (31 - day)) % 7;
     int lastSunday = 31 - weekdayOf31;
 
     if (month == 3)
+    {
         return (day > lastSunday || (day == lastSunday && hour >= 2));
+    ]
+
     if (month == 10)
+    {
         return !(day > lastSunday || (day == lastSunday && hour >= 3));
+    }
 
     return false;
-}
-
-void extractDateComponent(time_t epoch, int &day, int &month, int &weekday, int &hour)
-{
-    struct tm *timeInfo;
-    timeInfo = gmtime(&epoch);
-
-    day = timeInfo->tm_mday;
-    month = timeInfo->tm_mon + 1;
-    weekday = timeInfo->tm_wday;
-    hour = timeInfo->tm_hour;
-}
-
-void playAdhan()
-{
-    fxPlayer.start();
-    fxPlayer.play(1);
-    delay(Config::ADHAN_DURATION_MS);
-    fxPlayer.stop();
-}
-
-void setup()
-{
-    Serial.begin(19200);
-    fxSerial.begin(9600);
-    while (!Serial)
-        ;
-
-    lcd.init();
-    lcd.backlight();
-    lcd.clear();
-
-    connectToWifi();
-
-    if (!fxPlayer.begin(fxSerial, true, true))
-    {
-        displayMessage("DFMiniPlayer", "not connected");
-    }
-    else
-    {
-        displayMessage("DFMiniPlayer", "connected");
-    }
-    fxPlayer.volume(Config::VOLUME);
-
-    RTC.begin();
-    timeClient.begin();
-}
-
-void loop()
-{
-    timeClient.update();
-
-    int timezoneOffsetHour = Config::TIMEZONE_OFFSET_HOURS;
-    int day, month, weekday, hour;
-    extractDateComponent(timeClient.getEpochTime(), day, month, weekday, hour);
-
-    if (isDaylightSavingTime(day, month, weekday, hour))
-    {
-        timezoneOffsetHour += Config::DST_OFFSET;
     }
 
-    RTCTime currentTime(timeClient.getEpochTime() + timezoneOffsetHour);
-    RTC.setTime(currentTime);
-
-    String currentTimeDisplay = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes());
-    String currentDateDisplay = formatTimeWithLeadingZero(currentTime.getDayOfMonth()) + "/" + formatTimeWithLeadingZero(Month2int(currentTime.getMonth())) + "/" + formatTimeWithLeadingZero(currentTime.getYear());
-
-    static String lastDisplayedTime = "";
-    if (currentTimeDisplay != lastDisplayedTime)
+    void extractDateComponent(time_t epoch, int &day, int &month, int &weekday, int &hour)
     {
-        lastDisplayedTime = currentTimeDisplay;
-        lcd.setCursor(0, 0);
-        lcd.print(currentDateDisplay + " " + currentTimeDisplay + "          ");
+        struct tm *timeInfo;
+        timeInfo = gmtime(&epoch);
+
+        day = timeInfo->tm_mday;
+        month = timeInfo->tm_mon + 1;
+        weekday = timeInfo->tm_wday;
+        hour = timeInfo->tm_hour;
     }
 
-    String timeForReset = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes()) + ":" + formatTimeWithLeadingZero(currentTime.getSeconds());
-
-    // Update prayer time daily.
-    if (timeForReset == "00:01:00" || strcmp(prayerTimes.fajr, "--:--") == 0)
+    void playAdhan()
     {
-        jsonDoc = getPrayerTimes(currentTime);
-        updatePrayerTimes(jsonDoc);
+        fxPlayer.start();
+        fxPlayer.play(1);
+        delay(Config::ADHAN_DURATION_MS);
+        fxPlayer.stop();
     }
 
-    // Reset sound flags.
-    if (timeForReset == "23:59:50")
+    void setup()
     {
-        soundState = {};
-    }
+        Serial.begin(19200);
+        fxSerial.begin(9600);
+        while (!Serial)
+            ;
 
-    String prayerTimeToCompare = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes());
-    const char *displayPrayer = "";
-    const char *displayPrayerTime = "--:--";
-    unsigned long timeForInterchangingPrayerTime = millis();
+        lcd.init();
+        lcd.backlight();
+        lcd.clear();
 
-    if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.muntasafallayl_midnight) > 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr) < 0)
-    {
-        displayPrayer = "FAJR";
-        displayPrayerTime = prayerTimes.fajr;
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr_endtime) < 0)
-    {
-        displayPrayer = "FAJR END";
-        displayPrayerTime = prayerTimes.fajr_endtime;
-        if ((timeForInterchangingPrayerTime / 3000) % 2 == 0)
+        connectToWifi();
+
+        if (!fxPlayer.begin(fxSerial, true, true))
         {
-            displayPrayer = "DUHR";
-            displayPrayerTime = prayerTimes.duhr;
+            displayMessage("DFMiniPlayer", "not connected");
         }
         else
         {
-            displayPrayer = "FAJR END";
-            displayPrayerTime = prayerTimes.fajr_endtime;
+            displayMessage("DFMiniPlayer", "connected");
         }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr_endtime) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) < 0)
-    {
-        displayPrayer = "DUHR";
-        displayPrayerTime = prayerTimes.duhr;
-        if (!soundState.duhrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) == 0)
-        {
-            soundState.duhrSoundPlayed = true;
-            playAdhan();
-        }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) < 0)
-    {
-        displayPrayer = "ASR";
-        displayPrayerTime = prayerTimes.asr;
-        if (!soundState.asrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) == 0)
-        {
-            soundState.asrSoundPlayed = true;
-            playAdhan();
-        }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) < 0)
-    {
-        displayPrayer = "MGHRIB";
-        displayPrayerTime = prayerTimes.maghrib;
-        if (!soundState.maghribSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) == 0)
-        {
-            soundState.maghribSoundPlayed = true;
-            playAdhan();
-        }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) < 0)
-    {
-        displayPrayer = "MGHR END";
-        displayPrayerTime = prayerTimes.maghrib_endtime;
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) < 0)
-    {
-        displayPrayer = "ISHA";
-        displayPrayerTime = prayerTimes.isha;
-        if (!soundState.ishaSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) == 0)
-        {
-            soundState.ishaSoundPlayed = true;
-            playAdhan();
-        }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.muntasafallayl_midnight) < 0)
-    {
-        displayPrayer = "MIDNATT";
-        displayPrayerTime = prayerTimes.muntasafallayl_midnight;
+        fxPlayer.volume(Config::VOLUME);
+
+        RTC.begin();
+        timeClient.begin();
     }
 
-    lcd.setCursor(0, 1);
-    lcd.print(String(displayPrayer) + ": " + String(displayPrayerTime) + "   ");
-}
+    void loop()
+    {
+        timeClient.update();
+
+        int timezoneOffsetHour = Config::TIMEZONE_OFFSET_HOURS;
+        int day, month, weekday, hour;
+        extractDateComponent(timeClient.getEpochTime(), day, month, weekday, hour);
+
+        if (isDaylightSavingTime(day, month, weekday, hour))
+        {
+            timezoneOffsetHour += Config::DST_OFFSET;
+        }
+
+        RTCTime currentTime(timeClient.getEpochTime() + timezoneOffsetHour);
+        RTC.setTime(currentTime);
+
+        String currentTimeDisplay = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes());
+        String currentDateDisplay = formatTimeWithLeadingZero(currentTime.getDayOfMonth()) + "/" + formatTimeWithLeadingZero(Month2int(currentTime.getMonth())) + "/" + formatTimeWithLeadingZero(currentTime.getYear());
+
+        static String lastDisplayedTime = "";
+        if (currentTimeDisplay != lastDisplayedTime)
+        {
+            lastDisplayedTime = currentTimeDisplay;
+            lcd.setCursor(0, 0);
+            lcd.print(currentDateDisplay + " " + currentTimeDisplay + "          ");
+        }
+
+        String timeForReset = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes()) + ":" + formatTimeWithLeadingZero(currentTime.getSeconds());
+
+        // Update prayer time daily.
+        if (timeForReset == "00:01:00" || strcmp(prayerTimes.fajr, "--:--") == 0)
+        {
+            jsonDoc = getPrayerTimes(currentTime);
+            updatePrayerTimes(jsonDoc);
+        }
+
+        // Reset sound flags.
+        if (timeForReset == "23:59:50")
+        {
+            soundState = {};
+        }
+
+        String prayerTimeToCompare = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes());
+
+        if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.muntasafallayl_midnight) > 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("FAJR:      " + String(prayerTimes.fajr) + "   ");
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr_endtime) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("FAJR END:   " + String(prayerTimes.fajr_endtime) + "   ");
+            if (formatTimeWithLeadingZero(currentTime.getMinutes()).toInt() % 3 == 0)
+            {
+                lcd.setCursor(0, 1);
+                lcd.print("DUHR:       " + String(prayerTimes.duhr) + "   ");
+            }
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr_endtime) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("DUHR:       " + String(prayerTimes.duhr) + "   ");
+            if (!soundState.duhrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) == 0)
+            {
+                soundState.duhrSoundPlayed = true;
+                playAdhan();
+            }
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("ASR:        " + String(prayerTimes.asr) + "   ");
+            if (!soundState.asrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) == 0)
+            {
+                soundState.asrSoundPlayed = true;
+                playAdhan();
+            }
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("MAGHRIB:   " + String(prayerTimes.maghrib) + "   ");
+            if (!soundState.maghribSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) == 0)
+            {
+                soundState.maghribSoundPlayed = true;
+                playAdhan();
+            }
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("MAGHR END: " + String(prayerTimes.maghrib_endtime) + "   ");
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("ISHA:      " + String(prayerTimes.isha) + "   ");
+            if (!soundState.ishaSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) == 0)
+            {
+                soundState.ishaSoundPlayed = true;
+                playAdhan();
+            }
+        }
+        else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.muntasafallayl_midnight) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("MIDNATT:   " + String(prayerTimes.muntasafallayl_midnight) + "   ");
+        }
+    }
