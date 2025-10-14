@@ -43,6 +43,10 @@ This project was built using YouTube tutorials, components sourced from eBay and
 
 ---
 
+## :camera: Images
+
+![Front of device]("./docs/images/device_front.jpg")
+
 ## 🕋 Summary
 
 The Salah Notifier is a compact and practical solution for displaying daily prayer times and automatically playing the adhan. It combines hardware simplicity with smart daily updates from an online API, making it both functional and elegant for any Muslim household.
