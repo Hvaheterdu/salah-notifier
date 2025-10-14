@@ -52,7 +52,7 @@ struct PrayerTimes
     const char *asr_endtime = "--:--";
     const char *ghrub_sunset = "--:--";
     const char *maghrib = "--:--";
-    char *maghrib_endtime = "--:--";
+    char *maghrib_endtime = nullptr;
     const char *isha = "--:--";
     const char *shafaqal_ahmar_end_redlight = "--:--";
     const char *shafaqal_abyadh_end_whitelight = "--:--";
@@ -181,8 +181,7 @@ StaticJsonDocument<Config::JSON_DOCUMENT_SIZE> getPrayerTimes(const RTCTime curr
     wifiClient.print("Host: " + String(Config::HOST_NAME) + "\r\n");
     wifiClient.print("Api-Token: " + String(Config::API_TOKEN) + "\r\n");
     wifiClient.print("Accept: " + String(Config::CONTENT_TYPE) + "\r\n");
-    wifiClient.print("Connection: close\r\n");
-    wifiClient.println();
+    wifiClient.print("Connection: close\r\n\r\n");
 
     while (!wifiClient.available())
     {
@@ -208,8 +207,8 @@ StaticJsonDocument<Config::JSON_DOCUMENT_SIZE> getPrayerTimes(const RTCTime curr
     String responseBody = "";
     while (wifiClient.available())
     {
-        char responseChar = wifiClient.read();
-        responseBody += responseChar;
+        char responseBytes = wifiClient.read();
+        responseBody += responseBytes;
     }
 
     DeserializationError error = deserializeJson(jsonDoc, responseBody);
@@ -313,9 +312,8 @@ void loop()
 {
     timeClient.update();
 
-    time_t utcTime = timeClient.getEpochTime();
-
-    time_t localTime = CE.toLocal(utcTime);
+    time_t epochTime = timeClient.getEpochTime();
+    time_t localTime = CE.toLocal(epochTime);
     RTCTime currentTime(localTime);
     RTC.setTime(currentTime);
 
@@ -330,17 +328,15 @@ void loop()
         lcd.print(currentDateDisplay + " " + currentTimeDisplay + "          ");
     }
 
-    String timeForReset = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes()) + ":" + formatTimeWithLeadingZero(currentTime.getSeconds());
+    String timeForUpdate = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes()) + ":" + formatTimeWithLeadingZero(currentTime.getSeconds());
 
-    // Update prayer time daily.
-    if (timeForReset == "00:01:00" || strcmp(prayerTimes.fajr, "--:--") == 0)
+    if (timeForUpdate == "00:01:00" || strcmp(prayerTimes.fajr, "--:--") == 0)
     {
         jsonDoc = getPrayerTimes(currentTime);
         updatePrayerTimes(jsonDoc);
     }
 
-    // Reset sound flags.
-    if (timeForReset == "23:59:50")
+    if (timeForUpdate == "23:59:50")
     {
         soundState = {};
     }
@@ -411,5 +407,11 @@ void loop()
     {
         lcd.setCursor(0, 1);
         lcd.print("MIDNATT:   " + String(prayerTimes.muntasafallayl_midnight) + "   ");
+    }
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        displayMessage("WiFi lost!", "Reconnecting...");
+        connectToWifi();
     }
 }
