@@ -368,17 +368,17 @@ void loop()
             playAdhan();
         }
     }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) < 0)
+    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_2x_shadow) < 0)
     {
         lcd.setCursor(0, 1);
-        lcd.print("ASR:       " + String(prayerTimes.asr) + "   ");
-        if (!soundState.asrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) == 0)
+        lcd.print("ASR:       " + String(prayerTimes.asr_2x_shadow) + "   ");
+        if (!soundState.asrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_2x_shadow) == 0)
         {
             soundState.asrSoundPlayed = true;
             playAdhan();
         }
     }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) < 0)
+    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_2x_shadow) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) < 0)
     {
         lcd.setCursor(0, 1);
         lcd.print("MAGHRIB:   " + String(prayerTimes.maghrib) + "   ");
@@ -386,6 +386,12 @@ void loop()
         {
             soundState.maghribSoundPlayed = true;
             playAdhan();
+        }
+
+        if (formatTimeWithLeadingZero(currentTime.getMinutes()).toInt() % 3 == 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_endtime) < 0)
+        {
+            lcd.setCursor(0, 1);
+            lcd.print("ASR END:   " + String(prayerTimes.asr_endtime) + "   ");
         }
     }
     else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) < 0)
