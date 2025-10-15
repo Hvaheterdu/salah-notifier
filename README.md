@@ -45,7 +45,7 @@ This project was built using YouTube tutorials, components sourced from eBay and
 
 ## :camera: Images
 
-![Front of device](https://github.com/Hvaheterdu/salah-notifier/blob/main/docs/images/device_front.jpg)
+![Front of device](https://github.com/Hvaheterdu/salah-notifier/blob/main/docs/images/device_front.jpeg)
 
 ## 🕋 Summary
 
