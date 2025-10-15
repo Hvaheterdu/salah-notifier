@@ -83,10 +83,10 @@ struct PrayerTimes
 // State management.
 struct PrayerSoundState
 {
-    bool duhrSoundPlayed = false;
-    bool asrSoundPlayed = false;
-    bool maghribSoundPlayed = false;
-    bool ishaSoundPlayed = false;
+    bool duhr = false;
+    bool asr = false;
+    bool maghrib = false;
+    bool isha = false;
 };
 
 // Global Objects.
@@ -131,12 +131,8 @@ void displayMessage(const String firstLine, const String secondLine = "", int du
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print(firstLine);
-    if (!secondLine.isEmpty())
-    {
-        lcd.setCursor(0, 1);
-        lcd.print(secondLine);
-    }
-
+    lcd.setCursor(0, 1);
+    lcd.print(secondLine);
     delay(duration);
     lcd.clear();
 }
@@ -273,6 +269,30 @@ String formatTimeWithLeadingZero(int value)
     return (value < 10 ? "0" : "") + String(value);
 }
 
+int convertStringTimeToMinutes(const String timeAsString)
+{
+    if (timeAsString.length() < 5)
+    {
+        return 0;
+    }
+    int hours = timeAsString.substring(0, 2).toInt();
+    int minutes = timeAsString.substring(3, 5).toInt();
+
+    return hours * 60 + minutes;
+}
+
+bool isBetween(int start, int end, int currentTimeInMinutes)
+{
+    if (start <= end)
+    {
+        return (currentTimeInMinutes >= start && currentTimeInMinutes < end);
+    }
+    else
+    {
+        return (currentTimeInMinutes >= start || currentTimeInMinutes < end);
+    }
+}
+
 void playAdhan()
 {
     fxPlayer.start();
@@ -329,90 +349,79 @@ void loop()
     }
 
     String timeForUpdate = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes()) + ":" + formatTimeWithLeadingZero(currentTime.getSeconds());
-
     if (timeForUpdate == "00:01:00" || strcmp(prayerTimes.fajr, "--:--") == 0)
     {
         jsonDoc = getPrayerTimes(currentTime);
         updatePrayerTimes(jsonDoc);
     }
-
     if (timeForUpdate == "23:59:50")
     {
         soundState = {};
     }
 
-    String prayerTimeToCompare = formatTimeWithLeadingZero(currentTime.getHour()) + ":" + formatTimeWithLeadingZero(currentTime.getMinutes());
+    int fajr = convertStringTimeToMinutes(prayerTimes.fajr);
+    int fajrEnd = convertStringTimeToMinutes(prayerTimes.fajr_endtime);
+    int duhr = convertStringTimeToMinutes(prayerTimes.duhr);
+    int asr = convertStringTimeToMinutes(prayerTimes.asr_2x_shadow);
+    int maghrib = convertStringTimeToMinutes(prayerTimes.maghrib);
+    int maghribEnd = convertStringTimeToMinutes(prayerTimes.maghrib_endtime);
+    int isha = convertStringTimeToMinutes(prayerTimes.isha);
+    int midnight = convertStringTimeToMinutes(prayerTimes.muntasafallayl_midnight);
+    int currentTimeInMinutes = currentTime.getHour() * 60 + currentTime.getMinutes();
 
-    if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.muntasafallayl_midnight) > 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr) < 0)
+    lcd.setCursor(0, 1);
+    if (isBetween(midnight, fajr, currentTimeInMinutes))
     {
-        lcd.setCursor(0, 1);
-        lcd.print("FAJR:      " + String(prayerTimes.fajr) + "   ");
+        lcd.print("FAJR: " + String(prayerTimes.fajr));
     }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr_endtime) < 0)
+    else if (isBetween(fajr, duhr, currentTimeInMinutes))
     {
-        lcd.setCursor(0, 1);
-        lcd.print("FAJR END:  " + String(prayerTimes.fajr_endtime) + "   ");
-        if (formatTimeWithLeadingZero(currentTime.getMinutes()).toInt() % 3 == 0)
+        lcd.print("DUHR: " + String(prayerTimes.duhr));
+        if (currentTimeInMinutes < fajrEnd && currentTime.getSeconds() % 6 < 3)
+        {
+            lcd.print("FAJR END: " + String(prayerTimes.fajr_endtime));
+        }
+    }
+    else if (isBetween(duhr, asr, currentTimeInMinutes))
+    {
+        lcd.print("ASR: " + String(prayerTimes.asr_2x_shadow));
+        if (!soundState.duhr && currentTimeInMinutes == duhr)
+        {
+            soundState.duhr = true;
+            playAdhan();
+        }
+    }
+    else if (isBetween(asr, maghrib, currentTimeInMinutes))
+    {
+        lcd.print("MAGHRIB: " + String(prayerTimes.maghrib));
+        if (!soundState.asr && currentTimeInMinutes == asr)
+        {
+            soundState.asr = true;
+            playAdhan();
+        }
+    }
+    else if (isBetween(maghrib, isha, currentTimeInMinutes))
+    {
+        lcd.print("ISHA: " + String(prayerTimes.isha));
+        if (currentTime.getSeconds() % 6 < 3)
         {
             lcd.setCursor(0, 1);
-            lcd.print("DUHR:      " + String(prayerTimes.duhr) + "   ");
+            lcd.print("MAGRB END: " + String(prayerTimes.maghrib_endtime));
         }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.fajr_endtime) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) < 0)
-    {
-        lcd.setCursor(0, 1);
-        lcd.print("DUHR:      " + String(prayerTimes.duhr) + "   ");
-        if (!soundState.duhrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) == 0)
+        if (!soundState.maghrib && currentTimeInMinutes == maghrib)
         {
-            soundState.duhrSoundPlayed = true;
+            soundState.maghrib = true;
             playAdhan();
         }
     }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.duhr) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_2x_shadow) < 0)
+    else if (isBetween(isha, midnight, currentTimeInMinutes))
     {
-        lcd.setCursor(0, 1);
-        lcd.print("ASR:       " + String(prayerTimes.asr_2x_shadow) + "   ");
-        if (!soundState.asrSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_2x_shadow) == 0)
+        lcd.print("MIDNATT: " + String(prayerTimes.muntasafallayl_midnight));
+        if (!soundState.isha && currentTimeInMinutes == isha)
         {
-            soundState.asrSoundPlayed = true;
+            soundState.isha = true;
             playAdhan();
         }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_2x_shadow) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) < 0)
-    {
-        lcd.setCursor(0, 1);
-        lcd.print("MAGHRIB:   " + String(prayerTimes.maghrib) + "   ");
-        if (!soundState.maghribSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) == 0)
-        {
-            soundState.maghribSoundPlayed = true;
-            playAdhan();
-        }
-
-        if (formatTimeWithLeadingZero(currentTime.getMinutes()).toInt() % 3 == 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.asr_endtime) < 0)
-        {
-            lcd.setCursor(0, 1);
-            lcd.print("ASR END:   " + String(prayerTimes.asr_endtime) + "   ");
-        }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) < 0)
-    {
-        lcd.setCursor(0, 1);
-        lcd.print("MAGHR END: " + String(prayerTimes.maghrib_endtime) + "   ");
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.maghrib_endtime) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) < 0)
-    {
-        lcd.setCursor(0, 1);
-        lcd.print("ISHA:      " + String(prayerTimes.isha) + "   ");
-        if (!soundState.ishaSoundPlayed && strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) == 0)
-        {
-            soundState.ishaSoundPlayed = true;
-            playAdhan();
-        }
-    }
-    else if (strcmp(prayerTimeToCompare.c_str(), prayerTimes.isha) >= 0 && strcmp(prayerTimeToCompare.c_str(), prayerTimes.muntasafallayl_midnight) < 0)
-    {
-        lcd.setCursor(0, 1);
-        lcd.print("MIDNATT:   " + String(prayerTimes.muntasafallayl_midnight) + "   ");
     }
 
     if (WiFi.status() != WL_CONNECTED)
