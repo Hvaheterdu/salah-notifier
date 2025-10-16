@@ -52,7 +52,7 @@ struct PrayerTimes
     const char *asr_endtime = "--:--";
     const char *ghrub_sunset = "--:--";
     const char *maghrib = "--:--";
-    char *maghrib_endtime = nullptr;
+    char maghrib_endtime[6] = "--:--";
     const char *isha = "--:--";
     const char *shafaqal_ahmar_end_redlight = "--:--";
     const char *shafaqal_abyadh_end_whitelight = "--:--";
@@ -108,7 +108,7 @@ TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120}; // UTC +2
 TimeChangeRule CET = {"CET", Last, Sun, Oct, 3, 60};    // UTC +1
 Timezone CE(CEST, CET);
 
-void calculateMaghribEndTime(const char *maghrib, int minutesToAdd, char outBuffer[6])
+void calculateMaghribEndTime(const char maghrib[6], int minutesToAdd, char outBuffer[6])
 {
     int hours = 0;
     int minutes = 0;
@@ -363,28 +363,33 @@ void loop()
     int fajrEnd = convertStringTimeToMinutes(prayerTimes.fajr_endtime);
     int duhr = convertStringTimeToMinutes(prayerTimes.duhr);
     int asr = convertStringTimeToMinutes(prayerTimes.asr_2x_shadow);
+    int asrEnd = convertStringTimeToMinutes(prayerTimes.asr_endtime);
     int maghrib = convertStringTimeToMinutes(prayerTimes.maghrib);
     int maghribEnd = convertStringTimeToMinutes(prayerTimes.maghrib_endtime);
     int isha = convertStringTimeToMinutes(prayerTimes.isha);
     int midnight = convertStringTimeToMinutes(prayerTimes.muntasafallayl_midnight);
+    int ishaAzaanToggle = convertStringTimeToMinutes("22:00");
     int currentTimeInMinutes = currentTime.getHour() * 60 + currentTime.getMinutes();
 
     lcd.setCursor(0, 1);
     if (isBetween(midnight, fajr, currentTimeInMinutes))
     {
-        lcd.print("FAJR: " + String(prayerTimes.fajr));
+        lcd.print("FAJR: " + String(prayerTimes.fajr) + "                ");
     }
     else if (isBetween(fajr, duhr, currentTimeInMinutes))
     {
-        lcd.print("DUHR: " + String(prayerTimes.duhr));
-        if (currentTimeInMinutes < fajrEnd && currentTime.getSeconds() % 6 < 3)
+        if (currentTimeInMinutes < fajrEnd && currentTime.getSeconds() % 3 == 0)
         {
-            lcd.print("FAJR END: " + String(prayerTimes.fajr_endtime));
+            lcd.print("FAJR END: " + String(prayerTimes.fajr_endtime) + "                ");
+        }
+        else
+        {
+            lcd.print("DUHR: " + String(prayerTimes.duhr) + "                ");
         }
     }
     else if (isBetween(duhr, asr, currentTimeInMinutes))
     {
-        lcd.print("ASR: " + String(prayerTimes.asr_2x_shadow));
+        lcd.print("ASR: " + String(prayerTimes.asr_2x_shadow) + "                ");
         if (!soundState.duhr && currentTimeInMinutes == duhr)
         {
             soundState.duhr = true;
@@ -393,7 +398,15 @@ void loop()
     }
     else if (isBetween(asr, maghrib, currentTimeInMinutes))
     {
-        lcd.print("MAGHRIB: " + String(prayerTimes.maghrib));
+        if (currentTimeInMinutes < asrEnd && currentTime.getSeconds() % 3 == 0)
+        {
+            lcd.print("ASR END: " + String(prayerTimes.asr_endtime) + "                ");
+        }
+        else
+        {
+            lcd.print("MAGHRIB: " + String(prayerTimes.maghrib) + "                ");
+        }
+
         if (!soundState.asr && currentTimeInMinutes == asr)
         {
             soundState.asr = true;
@@ -402,12 +415,15 @@ void loop()
     }
     else if (isBetween(maghrib, isha, currentTimeInMinutes))
     {
-        lcd.print("ISHA: " + String(prayerTimes.isha));
-        if (currentTime.getSeconds() % 6 < 3)
+        if (currentTimeInMinutes < maghribEnd && currentTime.getSeconds() % 3 == 0)
         {
-            lcd.setCursor(0, 1);
-            lcd.print("MAGRB END: " + String(prayerTimes.maghrib_endtime));
+            lcd.print("MAGRB END: " + String(prayerTimes.maghrib_endtime) + "                ");
         }
+        else
+        {
+            lcd.print("ISHA: " + String(prayerTimes.isha) + "                ");
+        }
+
         if (!soundState.maghrib && currentTimeInMinutes == maghrib)
         {
             soundState.maghrib = true;
@@ -416,8 +432,8 @@ void loop()
     }
     else if (isBetween(isha, midnight, currentTimeInMinutes))
     {
-        lcd.print("MIDNATT: " + String(prayerTimes.muntasafallayl_midnight));
-        if (!soundState.isha && currentTimeInMinutes == isha)
+        lcd.print("MIDNATT: " + String(prayerTimes.muntasafallayl_midnight) + "                ");
+        if (!soundState.isha && currentTimeInMinutes < ishaAzaanToggle && currentTimeInMinutes == isha)
         {
             soundState.isha = true;
             playAdhan();
