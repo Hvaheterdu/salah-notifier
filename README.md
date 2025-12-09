@@ -34,10 +34,10 @@ This project was built using YouTube tutorials, components sourced from eBay and
 | Component | Description / Link |
 |------------|--------------------|
 | **Arduino Uno R4 WiFi** | [Arduino Uno R4 WiFi](https://store.arduino.cc/products/uno-r4-wifi) |
-| **3D-Printed Case** | [Case model (Printables)](https://www.printables.com/model/40047-case-for-arduino-uno-lcd16x2-with-i2c) |
+| **Case** | [KKSB Arduino UNO R4 Project Case for UNO R4 Minima and UNO R4 WiFi](https://kksb-cases.com/products/kksb-arduino-uno-r4-project-case-for-uno-r4-minima-and-uno-r4-wifi) |
 | **16x2 LCD Display** | [LCD Display with I²C Interface](https://store.arduino.cc/products/16x2-lcd-display-with-i-c-interface?queryID=undefined) |
 | **DFPlayer Mini** | [DFPlayer Mini MP3 Module](https://store.arduino.cc/products/dfplayer-a-mini-mp3-player?queryID=undefined) |
-| **Speaker** | [Speaker (eBay)](https://www.ebay.com/itm/316067196883?_trksid=p3959035.c101544.m1851&itmprp=cksum%3A31606719688384e5456b2dba41bdad987fc7d9e4dbc6%7Cenc%3AAQAKAAABoG96wQ16jds4VFcrhy1F3d4mbwZUJI9Fs%252BgdXYAHIzlX2e3YaNh7x%252BEnKA3G%252BCqSl1Xn4McfcWFK1GytmS2qxJ87mtE8Gm3iR1Ja4WBwh0hNHJrJx3Ki5mp04ow4CO7lP%252BooCybZDDU%252BbbSwmg7CbTin%252BBzBzbCYVnbjvyQAHu6--HI4MB7SvJl5IJqlyvomgoLMlgT6qAJzX0SANJhty2ej%252FUQIYJeXjT6AN0q2%252F9zKIdxQpZRnXYG06tdzPkX8My2cJLxMMdcpT4qbLeV9IcqD9IokRuftLgOKrLxFLadVPpZ54rhG9VlPQkNJf8RlwrPbp1TCKL0k3RI%252F81c4q%252Fa9uVMFOXwGTED1yTXzZK7SLSvRbUf4zfOVTpt%252B1tANDC2dw%252FHug9AORnNnQKyWBqSSoJESwhTX6Zhbkxz6%252BEIvP1sMoNV4Fn5ZNmZN0g8BCl2Mty4LLG30E486yvSyy9lPC9vTTMmfWoGbozQdmJpiAIvz5rWl%252BuXkapYjyd7f2NwEqBHD8yfvzYsndPWOYebr--x6juU--DqzX31erdOM%7Campid%3APL_CLK%7Cclp%3A3959035&itmmeta=01K7FR9RNY1BHWY3DB0S5NY69H) |
+| **Speaker** | [Speaker (eBay)](https://www.ebay.com/itm/127107431783) |
 | **Cables** | [40-Pin Jumper Wire Set](https://store.arduino.cc/products/40-colored-male-female-jumper-wires?queryID=766a826bebf1152b10588fac8a68a7a8) |
 | **SD Card** | Any SD card (≤ 32GB), formatted as FAT16 or FAT32 |
 
@@ -46,6 +46,8 @@ This project was built using YouTube tutorials, components sourced from eBay and
 ## :camera: Images
 
 ![Front of device](https://github.com/Hvaheterdu/salah-notifier/blob/main/docs/images/device_front.jpeg)
+![Back of device](https://github.com/Hvaheterdu/salah-notifier/blob/main/docs/images/device_back.jpeg)
+![Top of device](https://github.com/Hvaheterdu/salah-notifier/blob/main/docs/images/device_top.jpeg)
 
 ## 🕋 Summary
 
