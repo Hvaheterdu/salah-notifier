@@ -27,7 +27,7 @@ namespace Config
     // Speaker pins and settings.
     constexpr int RX_PIN = 0;
     constexpr int TX_PIN = 1;
-    constexpr int VOLUME = 20;
+    constexpr int VOLUME = 10;
     constexpr int ADHAN_DURATION_MS = 18000;
 
     // JSON configuration.
